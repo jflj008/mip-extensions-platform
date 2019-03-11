@@ -11,6 +11,9 @@ define(function (require) {
         webInfoId: $('#down-href').attr('downid'),
         webInfoCid: $('#down-href').attr('cid'),
         webInfoRid: $('#down-href').attr('rid'),
+        isOrdered: $('#down-href').attr('isOrdered'),
+        orderedNum: $('#down-href').attr('orderedNum'),
+        isyuyue: true,
         platAndroidId: $('#plat_Android').attr('platid'),
         platAndroidAddress: $('#plat_Android').attr('Address'),
         platAndroidResSystem: $('#plat_Android').attr('ResSystem'),
@@ -212,8 +215,85 @@ define(function (require) {
                 img.src = 'https://stat-api.20hn.cn/jf.gif?web_id=5&id=' + this.webInfoId + '&cate_id=' + this.webInfoCid + '&cate=' + $('#info .cata').text() + '&title=' + $('#info h1').text() + '&device=1';
             });
         },
+        addyuyue: function (o,num) {
+            if (this.isyuyue) {
+                $(o).find('#btns,.noDown').remove();
+                $(o).find('#yuyue').show();
+                $(o).find('#info p').eq(1).find('span').eq(1).attr('id','').text(num + '人已预约');
+                $(o).find('#yuyue').click(function () {
+                    var top = $(window).scrollTop();
+                    if(top < ($(o).find('header').height() + 90)){
+                        top = (top==0)?0:top;
+                    }
+                    var $sTop=($(window).height()-$(o).find('.yAlert').height())/2+top;
+                    $(o).find('.yAlert').css({'top':$sTop+'px'});
+                    $(o).find('.yAlert,.yAlert_bg').show();
+                    $(o).find('.yAlert_c,.yAlert_bg,.yAlert_br').click(function(){
+                        $(o).find('.yAlert,.yAlert_bg').hide();
+                        $(window).scrollTop(top);
+                    });
+                    $(o).find('#yPhone').click(function(){
+                        $(o).find('.yAlert').css({'top':$sTop+'px'});
+                    });
+                    $(o).find('.yAlert_bs').click(function(){
+                        var phone = $(o).find('#yPhone');
+                        var pVal = phone.val();
+                        var reg = (/^1[3|4|5|8][0-9]\d{4,8}$/).test(pVal);
+                        if(!pVal){
+                            alert('手机号码不能为空~！');
+                        }
+                        else if(!reg){
+                            alert('请输入正确的手机号码~!');
+                            phone.val('');
+                        }
+                        else{
+                            fetch('https://m.pc6.com/ajax.asp?action=988&resource_name=' + $(o).find('#info .name h1').text() + '&url=' + window.location.href + '&phone=' + pVal + '&resource_id=' + this.webInfoId + '&catalog_id=' + this.webInfoCid + '&catalog_name=' + $(o).find('#info .cata').text(), {
+                                method: 'get'
+                            }).then(function (response) {
+                                response.json().then(function (data) {
+                                    if (data.code === 0) {
+                                        alert('预约成功！');
+                                        $(o).find('#yuyue span').text('预约成功').addClass('suBtn');
+                                        $(o).find('.yAlert,.yAlert_bg').hide();
+                                        this.isyuyue = false;
+                                    }
+                                });
+                            }).catch(function (err) {
+                            });
+                        }
+                    });
+                });
+            }
+            else {
+                alert('您已经预约过了！');
+            }
+        },
+        yuyue: function (o) {
+            if (void 0 !== this.isOrdered){
+                if (is_ordered == 1) {
+                    this.addyuyue(o,this.orderedNum);
+                }
+            }
+            else {
+                fetch('https://m.pc6.com/ajax.asp?action=989&id=' + this.webInfoId, {
+                    method: 'get'
+                }).then(function (response) {
+                    response.json().then(function (data) {
+                        if (void 0 !== data.content) {
+                            var n = data.content;
+                            var flag = n.is_ordered;
+                            var oNum = n.ordered_num;
+                            if (flag == 1) {
+                                this.addyuyue(o,oNum);
+                            }
+                        }
+                    });
+                }).catch(function (err) {
+                });
+            }            
+        },
         init: function (o) {
-            this.xfNav(), this.rank(), this.downHref(), this.hotRec(), this.show(), this.jc(), this.ntj(o);
+            this.xfNav(), this.rank(), this.downHref(), this.hotRec(), this.show(), this.jc(), this.ntj(o) ,this.yuyue(o);
         }
     };
     customElem.prototype.firstInviewCallback = function () {
